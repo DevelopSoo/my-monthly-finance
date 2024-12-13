@@ -1,8 +1,10 @@
 import styled from "styled-components";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MonthNavigation from "../components/MonthNavigation";
 import ExpenseList from "../components/ExpenseList";
 import CreateExpense from "../components/CreateExpense";
+import supabase from "../utils/supabase";
+import getMonth from "../utils/getMonth";
 
 const Container = styled.main`
   max-width: 800px;
@@ -19,18 +21,31 @@ export const Section = styled.section`
   padding: 20px;
 `;
 
-export default function Home({ expenses, setExpenses }) {
-  const [month, setMonth] = useState(1);
+export default function Home() {
+  const [expenses, setExpenses] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(1);
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      const { data, error } = await supabase.from("expenses").select("*");
+      if (error) {
+        alert("데이터를 불러오는데 실패했습니다.");
+      } else {
+        setExpenses(data);
+      }
+    };
+    fetchExpenses();
+  }, []);
 
   const filteredExpenses = expenses.filter(
-    (expense) => expense.month === month
+    (expense) => getMonth(expense.date) === selectedMonth
   );
 
   return (
     <Container>
-      <MonthNavigation month={month} setMonth={setMonth} />
+      <MonthNavigation month={selectedMonth} setMonth={setSelectedMonth} />
       <CreateExpense
-        month={month}
+        setMonth={setSelectedMonth}
         expenses={expenses}
         setExpenses={setExpenses}
       />

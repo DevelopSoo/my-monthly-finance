@@ -1,7 +1,8 @@
 import { Section } from "../pages/Home";
 import styled from "styled-components";
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import supabase from "../utils/supabase";
+import getMonth from "../utils/getMonth";
 
 const InputRow = styled.div`
   display: flex;
@@ -45,15 +46,14 @@ const AddButton = styled.button`
   }
 `;
 
-export default function CreateExpense({ month, expenses, setExpenses }) {
-  const [newDate, setNewDate] = useState(
-    `2024-${String(month).padStart(2, "0")}-01`
-  );
+export default function CreateExpense({ expenses, setExpenses, setMonth }) {
+  const [newDate, setNewDate] = useState(`2024-01-01`);
   const [newItem, setNewItem] = useState("");
   const [newAmount, setNewAmount] = useState("");
   const [newDescription, setNewDescription] = useState("");
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
+    // 날짜 형식 검사 -> 미리 제공해주기
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (!datePattern.test(newDate)) {
       alert("날짜를 YYYY-MM-DD 형식으로 입력해주세요.");
@@ -66,20 +66,31 @@ export default function CreateExpense({ month, expenses, setExpenses }) {
       return;
     }
 
-    const newExpense = {
-      id: uuidv4(),
-      month: parseInt(newDate.split("-")[1], 10),
-      date: newDate,
-      item: newItem,
-      amount: parsedAmount,
-      description: newDescription,
-    };
+    const { data, error } = await supabase
+      .from("expenses")
+      .insert({
+        date: newDate,
+        item: newItem,
+        amount: parsedAmount,
+        description: newDescription,
+      })
+      .select();
 
-    setExpenses([...expenses, newExpense]);
-    setNewDate(`2024-${String(month).padStart(2, "0")}-01`);
+    if (error) {
+      return alert("저장에 실패했습니다.");
+    }
+
+    // API 추가 후 화면도 변경하기
+    setExpenses([...expenses, data[0]]);
+
+    // 입력 초기화
+    setNewDate(newDate); // 입력한 날짜 유지
     setNewItem("");
     setNewAmount("");
     setNewDescription("");
+
+    // 저장 후 해당 월로 이동
+    setMonth(getMonth(newDate));
   };
 
   return (

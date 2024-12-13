@@ -70,7 +70,7 @@ export default function ExpenseList({ expenses }) {
           <ExpenseItem
             key={expense.id}
             onClick={() => {
-              navigate(`/detail/${expense.id}`);
+              navigate(`/expenses/${expense.id}`);
             }}
           >
             <ExpenseDetails>

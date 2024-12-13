@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useNavigate, useParams } from "react-router-dom";
+import supabase from "../utils/supabase";
 
 const Container = styled.div`
   max-width: 800px;
@@ -57,18 +58,33 @@ const BackButton = styled(Button)`
   }
 `;
 
-export default function Detail({ expenses, setExpenses }) {
+export default function Detail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [date, setDate] = useState("");
+  const [item, setItem] = useState("");
+  const [amount, setAmount] = useState(0);
+  const [description, setDescription] = useState("");
 
-  const selectedExpense = expenses.find((element) => element.id === id);
+  useEffect(() => {
+    const getExpense = async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .eq("id", id);
+      if (error) {
+        alert("데이터를 불러오는데 실패했습니다.");
+      } else {
+        setDate(data[0].date);
+        setItem(data[0].item);
+        setAmount(data[0].amount);
+        setDescription(data[0].description);
+      }
+    };
+    getExpense();
+  }, [id]);
 
-  const [date, setDate] = useState(selectedExpense.date);
-  const [item, setItem] = useState(selectedExpense.item);
-  const [amount, setAmount] = useState(selectedExpense.amount);
-  const [description, setDescription] = useState(selectedExpense.description);
-
-  const editExpense = () => {
+  const editExpense = async () => {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (!datePattern.test(date)) {
       alert("날짜를 YYYY-MM-DD 형식으로 입력해주세요.");
@@ -79,27 +95,28 @@ export default function Detail({ expenses, setExpenses }) {
       return;
     }
 
-    const newExpenses = expenses.map((expense) => {
-      if (expense.id !== id) {
-        return expense;
-      } else {
-        return {
-          ...expense,
-          date: date,
-          item: item,
-          amount: amount,
-          description: description,
-        };
-      }
-    });
-    setExpenses(newExpenses);
+    await supabase
+      .from("expenses")
+      .update({
+        date: date,
+        item: item,
+        amount: amount,
+        description: description,
+      })
+      .eq("id", id);
     navigate("/");
   };
 
-  const deleteExpense = () => {
-    const newExpenses = expenses.filter((expense) => expense.id !== id);
-    setExpenses(newExpenses);
-    navigate("/");
+  const deleteExpense = async () => {
+    if (!window.confirm("정말로 삭제하시겠습니까?")) {
+      return;
+    }
+    const { error } = await supabase.from("expenses").delete().eq("id", id);
+    if (error) {
+      alert("삭제에 실패했습니다.");
+    } else {
+      navigate("/");
+    }
   };
 
   return (
