@@ -1,6 +1,6 @@
 import { Section } from "../pages/Home";
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const ExpenseItemList = styled.div`
   display: flex;
@@ -18,6 +18,7 @@ const ExpenseItem = styled.div`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease-in-out;
   cursor: pointer;
+  text-decoration: none;
 
   &:hover {
     transform: scale(1.02);
@@ -61,17 +62,14 @@ const ExpenseDetails = styled.div`
 `;
 
 export default function ExpenseList({ expenses }) {
-  const navigate = useNavigate();
-
   return (
     <Section>
       <ExpenseItemList>
         {expenses.map((expense) => (
           <ExpenseItem
             key={expense.id}
-            onClick={() => {
-              navigate(`/expenses/${expense.id}`);
-            }}
+            as={Link}
+            to={`/expenses/${expense.id}`}
           >
             <ExpenseDetails>
               <span>{expense.date}</span>
